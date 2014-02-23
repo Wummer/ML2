@@ -6,7 +6,7 @@ test = open('IrisTest2014.dt', 'r')
 
 """
 This function reads ind in the files, strips by newline and splits by space char. 
-It returns he dataset as numpy arrays.
+It returns the dataset as numpy arrays.
 """
 def read_data(filename):
 	data_set = ([])
@@ -19,8 +19,8 @@ trainset = read_data(train)
 testset = read_data(test)
 
 """
-This function takes the dataset and separates the datapoints in lists according to class.
-An array containing c numbers of arrays is returned - c is number of classes. 
+This function expects the dataset and separates the datapoints in lists according to class.
+It returns and array of c numbers of arrays - c is number of classes. 
 """
 def separate_in_classes(dataset):
 	temp = []
@@ -37,7 +37,7 @@ def separate_in_classes(dataset):
 	return np.array(separated)
 
 """
-This function takes a (subset of a) dataset and computes the mean of each class (leaving the class column out)
+This function expects a dataset or a subset and computes the mean of each class (leaving the class column out)
 it returns an array of s values - s is the number of features
 """
 def mean(dataset):
@@ -53,6 +53,7 @@ def mean(dataset):
 	return np.array(Mean)
 
 """
+This function expects a subset (an entire class) and the entire dataset. 
 This function finds the between class scatter matrix using the class mean (1 mean per feature) and the overall mean (1 mean per feature)
 It returns an N x N matrix - N is number of features
 """
@@ -65,9 +66,10 @@ def bwt_class_scatter_matrix(subset, dataset):
 	return np.matrix(between)
 
 """
-This function find the within scatter matrix.
-It takes a subset of the data. 
-For every datapoint it sums the matrix up. It returns the summed matrix
+This function calculates the within class scatter matrix.
+It expects a subset of the data. 
+For every datapoint - leaving out the class column - it sums the matrix up. 
+It returns the summed matrix, which is N x N matrix - N is number of features
 
 """
 def wtn_class_scatter_matrix(subset):
