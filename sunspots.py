@@ -4,6 +4,8 @@ import pylab as plt
 
 """ REGRESSION: SUNSPOT PREDICTION """
 
+"""II.2.1 MAXIMUM LIKELIHOOD SOLUTION """
+
 """ Load the data from the train and test files """
 def load_files(filename):
 	dataset = np.array([])
@@ -98,6 +100,13 @@ def calculateRMS(t, y):
 	RMS = np.sqrt(sum/N)
 	return RMS
 
+
+""" II.2.2 MAXIMUM A POSTERIORI SOLUTION """
+
+
+
+
+
 """ MAIN """
 train = load_files("sunspotsTrainStatML.dt")
 test = load_files("sunspotsTestStatML.dt")
@@ -131,6 +140,15 @@ w3 = findML(phi3, t)
 y1 = predict(w1, test_x1)
 y2 = predict(w2, test_x2)
 y3 = predict(w3, test_x3)
+
+#plot x & t for variable selection 2
+plt.plot(x2, t, "ro", label="x vs training label")
+plt.plot(test_x2, test_t, "bo", label="x vs actual test label")
+plt.plot(test_x2, y2, "go", label="x vs predicted test label")
+plt.xlabel("x = sunspots from 16 years ago")
+plt.ylabel("t = sunspots in current year")
+plt.legend(loc="best")
+plt.show()
 
 #calculate Root Mean Square (RMS) for each variable selection
 RMS1 = calculateRMS(test_t, y1)
