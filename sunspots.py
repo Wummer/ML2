@@ -19,16 +19,20 @@ def load_files(filename):
 
 	return dataset
 
-""" Get the subset of observation variables """
-""" ds = dataset """
-""" idx = the array indexes in ds to get as subset """
+""" 
+Get the subset of observation variables
+ds = dataset
+idx = the array indexes in ds to get as subset 
+"""
 def getSubset(ds, idx):
 	return ds[:,idx]
 
-""" Create the design matrix from vector X - either for Linear or quadratic basis functions"""
-""" - Linear design matrices would look like this: [1, x1, ..., xn]"""
-""" - Quadratic design matrices would look like this: (e.g. with 3 variables) """
-""" [1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3] for each row """
+""" 
+Create the design matrix from vector X - either for Linear or quadratic basis functions
+- Linear design matrices would look like this: [1, x1, ..., xn]
+- Quadratic design matrices would look like this: (e.g. with 3 variables)
+[1, x1, x2, x3, x1^2, x2^2, x3^2, x1*x2, x1*x3, x2*x3] for each row 
+"""
 def createDesignMatrix(X, type="linear"):
 	#if type=="linear, create an array of size 1+n, 
 	#else if type=="quadratic", create an array of 1 + n + n + (summation of X0..Xn-1)
@@ -60,9 +64,11 @@ def createDesignMatrix(X, type="linear"):
 	return phi
 
 
-""" Finding the Maximum Likelihood """
-""" phi = design matrix PHI """
-""" t = vector of corresponding target variables """
+""" 
+Finding the Maximum Likelihood 
+phi = design matrix PHI 
+t = vector of corresponding target variables 
+"""
 def findML(phi, t):
 	wML = np.dot(phi.T, phi)
 	wML = np.linalg.pinv(wML)
@@ -70,9 +76,11 @@ def findML(phi, t):
 	wML = np.dot(wML, t)
 	return wML
 
-""" In this function we will use the weight vectors from the training set and use them on the test set's variables """
-""" w = weight vectors from the train dataset """
-""" X_test = the subset of X variables from the test set """
+""" 
+In this function we will use the weight vectors from the training set and use them on the test set's variables
+w = weight vectors from the train dataset 
+X_test = the subset of X variables from the test set 
+"""
 def predict(w, X_test):
 	phi = createDesignMatrix(X_test) #create design matrix from the test variables
 	y = np.zeros(len(phi)) # predicted classes
@@ -86,10 +94,12 @@ def predict(w, X_test):
 
 	return y
 
-""" This function calculates the Root Mean Square """
-""" sqrt( 1/N * sum(tn-yn))"""
-""" t = actual value from the dataset """
-""" y = predicted value """
+""" 
+This function calculates the Root Mean Square
+sqrt( 1/N * sum(tn-yn))
+t = actual value from the dataset
+y = predicted value 
+"""
 def calculateRMS(t, y):
 	N = len(t)
 	sum = 0
@@ -102,8 +112,26 @@ def calculateRMS(t, y):
 
 
 """ II.2.2 MAXIMUM A POSTERIORI SOLUTION """
+def computeBayesianMeanAndCovariance(X, t, alpha):
+	beta = 1
+	#get design matrix
+	phi = createDesignMatrix(X)
 
+	#get second part of covariance matrix
+	bpp = beta * np.dot(phi.T, phi)
 
+	#get first part of covariance matrix
+	aI = np.zeros(bpp.shape)
+	np.fill_diagonal(aI, alpha) #alpha * I
+
+	covariance = aI + bpp
+ 	
+ 	#get each part of the mean equation
+ 	bs = beta * np.linalg.pinv(covariance)
+ 	mean = np.dot(bs, np.dot(phi.T, t))
+ 	mean = mean.reshape(-1,len(mean))[0]
+
+ 	return mean, covariance  
 
 
 
@@ -142,11 +170,11 @@ y2 = predict(w2, test_x2)
 y3 = predict(w3, test_x3)
 
 #plot x & t for variable selection 2
-plt.plot(x2, t, "ro", label="x vs training label")
-plt.plot(test_x2, test_t, "bo", label="x vs actual test label")
-plt.plot(test_x2, y2, "go", label="x vs predicted test label")
-plt.xlabel("x = sunspots from 16 years ago")
-plt.ylabel("t = sunspots in current year")
+plt.plot(t, x2, "ro", label="x vs training label")
+plt.plot(test_t, test_x2, "bo", label="x vs actual test label")
+plt.plot(y2, test_x2, "go", label="x vs predicted test label")
+plt.ylabel("x = sunspots in year s-16")
+plt.xlabel("t = sunspots in year s")
 plt.legend(loc="best")
 plt.show()
 
@@ -164,5 +192,38 @@ plt.plot(years, test_t, "xg-", label="Actual")
 plt.plot(years, y1, "xr-", label="D=2")
 plt.plot(years, y2, "xb-", label="D=1")
 plt.plot(years, y3, "xy-", label="D=5")
+plt.xlabel("years")
+plt.ylabel("sunspots")
 plt.legend(loc="best")
 plt.show()
+
+""" Bayesian LR - MAIN """
+alphas = np.arange(0, 165, 5)
+bys_RMS1, bys_RMS2, bys_RMS3 = np.array([]), np.array([]), np.array([])
+
+for alpha in alphas:
+	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x1, t, alpha)
+	bys_y1 = predict(bysMean, test_x1)
+
+	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x2, t, alpha)
+	bys_y2 = predict(bysMean, test_x2)
+
+	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x3, t, alpha)
+	bys_y3 = predict(bysMean, test_x3)
+
+	#calculate Root Mean Square (RMS) for each variable selection
+	bys_RMS1 = np.append(bys_RMS1, calculateRMS(test_t, bys_y1))
+	bys_RMS2 = np.append(bys_RMS2, calculateRMS(test_t, bys_y2))
+	bys_RMS3 = np.append(bys_RMS3, calculateRMS(test_t, bys_y3))
+
+plt.plot(alphas, bys_RMS1, ".r-", label="Bayes D=2")
+plt.plot(alphas, bys_RMS2, ".b-", label="Bayes D=1")
+plt.plot(alphas, bys_RMS3, ".g-", label="Bayes D=5")
+plt.plot(alphas, [RMS3] * len(bys_RMS3), ".y-", label="ML D=5")
+plt.xlabel("alphas")
+plt.ylabel("Bayesian Root Mean Square")
+plt.legend(loc="best")
+
+plt.show()
+
+""" Weighted sum-of-squares """
