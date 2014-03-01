@@ -20,6 +20,73 @@ def read_data(filename):
 trainset = read_data(train)
 testset = read_data(test)
 
+
+#Computing mean and variance
+"""
+This function takes a dataset and computes the mean and the variance of each input feature (leaving the class column out)
+It returns two lists: [mean of first feature, mean of second feature] [variance of first feature, variance of second feature]
+"""
+def mean_variance(data):
+	Mean = []
+	Variance = []
+	number_of_features = len(data[0]) - 1 #Leaving out the class
+	for i in xrange(number_of_features): 
+		s = 0
+		su = 0
+
+		#mean
+		for elem in data:
+			s +=elem[i]
+		mean = s / len(data)
+		Mean.append(mean)
+		
+		#variance:
+		for elem in data:
+			su += (elem[i] - Mean[i])**2
+			variance = su/len(data)	
+		Variance.append(variance)
+	return Mean, Variance
+
+
+"""
+This function calls mean_variance to get the mean and the variance for each feature
+Then these values are used to normalize every datapoint to zero mean and unit variance.
+A copy of the data is created. 
+The normalized values are inserted at the old index in the copy thus preserving class label 
+The new, standardized data set is returned
+"""
+def meanfree(data):
+	number_of_features = len(data[0]) - 1 #Leaving out the class
+	mean, variance = mean_variance(data)
+
+	new = np.copy(data)
+	for i in xrange(len(new)):
+		for num in xrange(number_of_features):
+			#replacing at correct index in the copy
+			new[i][num] = (new[i][num] - mean[num]) / np.sqrt(variance[num])
+	return new 
+
+"""
+This function transforms the test set using the mean and variance from the train set
+Assuming that both test and train set are i.i.d. from the same distribution this will make the
+test set mean free unit variance.  
+"""
+def transformtest(trainset, testset):
+	#getting the mean and variance from train:
+	meantrain, variancetrain = mean_variance(trainset)
+
+	number_of_features = len(trainset[0]) - 1 #Leaving out the class
+
+	newtest = np.copy(testset)
+
+	for num in xrange(number_of_features):
+		for i in xrange(len(testset)):
+			#replacing at correct index in the copy
+			newtest[i][num] = (testset[i][num] - meantrain[num]) / np.sqrt(variancetrain[num])
+	return newtest
+
+
+
 """
 This function expects the dataset and separates the datapoints in lists according to class.
 It takes out the class label (that is now reflected by list structure) and saves that in a list of lists of the same structure as the feature values.
@@ -54,16 +121,6 @@ def mean(dataset):
 	mean = sum(dataset) / len(dataset)
 	return mean
 
-"""
-
-def covariance(subset):
-	classmean = mean(subset)
-	number_of_features = len(subset[0]) - 1 #Leaving out the class
-	covariance = np.zeros(shape=(number_of_features,number_of_features))	
-	for datapoint in subset:
-		covariance+= np.outer((datapoint[:number_of_features] - classmean), (datapoint[:number_of_features] - classmean))
-	return np.matrix(covariance)
-"""
 
 train_separated, trainclasses = separate_in_classes(trainset)
 N = sum(len(x) for x in train_separated)
@@ -121,6 +178,12 @@ def LDA(separated):
 
 
 LDA(train_separated)
+
+# normalizing
+standardized_train = meanfree(trainset)
+transformed_test = transformtest(trainset, testset)
+m,v = mean_variance(transformed_test)
+
 # mu k is a vector of all 3 k's
 
 #eigw, eigv = np.linalg.eig(cov1)
