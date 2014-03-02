@@ -8,11 +8,6 @@ from sklearn.lda import LDA
 train = open('IrisTrain2014.dt', 'r')
 test = open('IrisTest2014.dt', 'r')
 
-##############################################################################
-#
-#                             Preparing  
-#
-##############################################################################
 """
 This function reads in the files, strips by newline and splits by space char. 
 It returns the dataset as numpy arrays.
@@ -39,40 +34,20 @@ def prepare_dataset(dataset):
 		features.append(datapoint[:-1].reshape(2,1))
 	return features, labels
 
-
-"""
-This function expects the dataset and separates the datapoints in lists according to class.
-It takes out the class label (that is now reflected by list structure) and saves that in a list of lists of the same structure as the feature values.
-It returns and array of one array per class and a list of lists for the classlabels. 
-"""
-def separate_in_classes(dataset):
-	temp = []
-	separated = []
-	classtemp = []
-	classsep = []
-
-	cl =0.0
-	while cl < 3.0:
-		for datapoint in dataset:
-			if datapoint[-1] == cl:
-				datapoint = datapoint[:2].reshape(2,1)
-				temp.append(datapoint[:2])
-				classtemp.append(datapoint[-1])
-		cl += 1.0
-		separated.append(temp)
-		classsep.append(classtemp)
+def prepare_for_sk(dataset):
+	labels = []
+	features = []
+	for datapoint in dataset:
 		temp = []
+		datapoint.tolist()
+		labels.append(datapoint[-1])
+		temp.append(datapoint[0])
+		temp.append(datapoint[1])
+		features.append(temp)
+	new = np.asarray(features)
+	return new, labels
 
-	return np.array(separated), classsep
-
-
-
-
-##############################################################################
-#
-#                             Normalizing 
-#
-##############################################################################
+#Computing mean and variance
 """
 This function takes a dataset with class labels and computes the mean and the variance of each input feature (leaving the class column out)
 It returns two lists: [mean of first feature, mean of second feature] [variance of first feature, variance of second feature]
@@ -138,11 +113,32 @@ def transformtest(trainset, testset):
 	return newtest
 
 
-##############################################################################
-#
-#                           Variables for LDA
-#
-##############################################################################
+
+"""
+This function expects the dataset and separates the datapoints in lists according to class.
+It takes out the class label (that is now reflected by list structure) and saves that in a list of lists of the same structure as the feature values.
+It returns and array of one array per class and a list of lists for the classlabels. 
+"""
+def separate_in_classes(dataset):
+	temp = []
+	separated = []
+	classtemp = []
+	classsep = []
+
+	cl =0.0
+	while cl < 3.0:
+		for datapoint in dataset:
+			if datapoint[-1] == cl:
+				datapoint = datapoint[:2].reshape(2,1)
+				temp.append(datapoint[:2])
+				classtemp.append(datapoint[-1])
+		cl += 1.0
+		separated.append(temp)
+		classsep.append(classtemp)
+		temp = []
+
+	return np.array(separated), classsep
+
 
 """
 This function expects a subset (an entire class). 
@@ -170,7 +166,7 @@ It returns the summed matrix, which is N x N matrix - N is number of features
 """
 def cova(separated):
 	N = sum(len(x) for x in train_separated)
-	number_of_features = len(separated[0][0]) 
+	number_of_features = len(separated[0][0]) #Leaving out the class
 	common = np.zeros(shape=(number_of_features, number_of_features))
 	su = np.zeros(shape=(number_of_features,number_of_features))
 	within = np.zeros(shape=(number_of_features,number_of_features))
@@ -178,47 +174,33 @@ def cova(separated):
 	for subset in separated:
 		classmean = sum(subset) / len(subset)	
 		for datapoint in subset:
-			su += np.outer((datapoint - classmean), (datapoint - classmean).T)
+			su += np.outer((datapoint - classmean), (datapoint - classmean))
 		within +=su
 	common += within
 	common = np.matrix(common)
 	common = common / (N - len(separated))
 	return common
 
-def prior(separated, dataset):
+
+
+def LinDA(dataset, labels, train_separated):
+	cov = cova(train_separated)
+	classmean = class_mean(train_separated)
+	
 	#getting the prior
 	Y = []
 	for subset in train_separated:
 		y = len(subset) / len(dataset)
 		Y.append(y)
-	return np.asarray(Y)
+	np.asarray(Y)
 
-##############################################################################
-#
-#                                 LDA
-#
-##############################################################################
-
-"""
-In this function the decision boundary is found. 
-It expects a dataset (2D array), adjacent 1D list of labels and a train set that is separated in lists according to classmean
-It calls functions to calculate the covariance and the classmean on the separated set.
-It makes one array Y of prior probabilities for each class. 
-Then it finds the argmax and compares the prediced label to the actual label and counts up to get the error. 
-"""
-def LinDA(dataset, labels, train_separated):
-	cov = cova(train_separated)
-	classmean = class_mean(train_separated)
-
-	Y = prior(train_separated, dataset)
-	
 	counter = 0
 	for i in xrange(len(dataset)): 		
 		deltas = []
 		for k in xrange(len(train_separated)): #for every class
 			deltaofx = np.dot(np.dot(dataset[i].T, cov.I), classmean[k]) -  0.5*(np.dot(np.dot(classmean[k].T, cov.I), classmean[k])) + math.log(Y[k])
 			deltas.append(deltaofx)
-		#finding argmax
+		
 		max_index, max_value = max(enumerate(deltas),key=operator.itemgetter(1)) #finding index of min value
 		max_index = float(max_index)
 		if max_index != labels[i]:
@@ -226,13 +208,6 @@ def LinDA(dataset, labels, train_separated):
 		
 	error = counter / len(dataset)
 	print "Error" , error
-
-
-##############################################################################
-#
-#                             Printing 
-#
-##############################################################################
 
 #Common
 trainset = read_data(train)
@@ -274,3 +249,74 @@ LinDA(stan_train_feat, trainlabels, stan_train_separated)
 print "Testset:"
 LinDA(stan_test_feat, testlabels, stan_train_separated)
 
+
+print "*" * 45
+print "Sklearn"
+print "*" * 45
+
+#Sklearn
+sk_train_feat, trainlabels = prepare_for_sk(trainset)
+sk_test_feat, testlabels = prepare_for_sk(testset)
+
+sk_train_stan = meanfree(sk_train_feat)
+sk_test_trans = transformtest(sk_train_feat, sk_test_feat)
+
+clf = LDA()
+
+print "-" * 45
+print "Non-Standardized"
+print "-" * 45
+clf.fit(sk_train_feat, trainlabels)
+
+
+ct = 0
+for d in xrange(len(sk_train_feat)):
+	yhat = clf.predict([sk_train_feat[d]])
+	yhat = float(yhat[0])
+	if yhat != trainlabels[d]:
+		ct +=1
+er = ct / len(sk_train_feat)
+print "Trainset: ", er
+
+count = 0
+for d in xrange(len(sk_test_feat)):
+	yhat = clf.predict([sk_test_feat[d]])
+	yhat = float(yhat[0])
+	if yhat != testlabels[d]:
+		count +=1
+erro = count / len(sk_test_feat)
+print "Testset: ", erro
+
+
+print "-" * 45
+print "Standardized"
+print "-" * 45
+
+clf.fit(sk_train_stan, trainlabels)
+
+cn = 0
+for d in xrange(len(sk_train_stan)):
+	yhat = clf.predict([sk_train_stan[d]])
+	yhat = float(yhat[0])
+	if yhat != trainlabels[d]:
+		cn +=1
+ero = cn / len(sk_train_stan)
+print "Testset: ", ero
+
+c = 0
+for d in xrange(len(sk_test_trans)):
+	yhat = clf.predict([sk_test_trans[d]])
+	yhat = float(yhat[0])
+	if yhat != testlabels[d]:
+		c +=1
+e = c / len(sk_test_trans)
+print "Testset: ", e
+
+
+
+"""
+
+plt.plot([elem[0] for elem in train_separated[0]],[elem[1] for elem in train_separated[0]],'x')
+plt.plot([elem[0] for elem in train_separated[1]],[elem[1] for elem in train_separated[1]],'ro')
+plt.show()
+"""
