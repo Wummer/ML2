@@ -88,7 +88,7 @@ def mean_variance(data):
 			s +=elem[i]
 		mean = s / len(data)
 		Mean.append(mean)
-		
+
 		#variance:
 		for elem in data:
 			su += (elem[i] - Mean[i])**2
@@ -209,7 +209,7 @@ def LinDA(dataset, labels, train_separated):
 	classmean = class_mean(train_separated)
 
 	Y = prior(train_separated, dataset)
-	
+
 	counter = 0
 	for i in xrange(len(dataset)): 		
 		deltas = []
@@ -221,7 +221,7 @@ def LinDA(dataset, labels, train_separated):
 		max_index = float(max_index)
 		if max_index != labels[i]:
 			counter += 1
-		
+
 	error = counter / len(dataset)
 	print "Error" , error
 
@@ -271,4 +271,3 @@ print "Trainset:"
 LinDA(stan_train_feat, trainlabels, stan_train_separated)
 print "Testset:"
 LinDA(stan_test_feat, testlabels, stan_train_separated)
-
