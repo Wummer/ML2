@@ -1,4 +1,4 @@
-Run from terminal. 
+Run main.py from terminal. 
 
 Libraries needed:
 
