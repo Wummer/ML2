@@ -133,8 +133,6 @@ def computeBayesianMeanAndCovariance(X, t, alpha):
 
  	return mean, covariance  
 
-
-
 """ MAIN """
 train = load_files("sunspotsTrainStatML.dt")
 test = load_files("sunspotsTestStatML.dt")
@@ -172,6 +170,7 @@ y3 = predict(w3, test_x3)
 #plot x & t for variable selection 2
 plt.plot(t, x2, "ro", label="x vs training label")
 plt.plot(test_t, test_x2, "bo", label="x vs actual test label")
+plt.plot(y2[0], test_x2[0], y2[:-1], test_x2[:-1], "k-")
 plt.plot(y2, test_x2, "go", label="x vs predicted test label")
 plt.ylabel("x = sunspots in year s-16")
 plt.xlabel("t = sunspots in year s")
@@ -198,7 +197,7 @@ plt.legend(loc="best")
 plt.show()
 
 """ Bayesian LR - MAIN """
-alphas = np.arange(0, 165, 5)
+alphas = np.arange(0, 1600, 5)
 bys_RMS1, bys_RMS2, bys_RMS3 = np.array([]), np.array([]), np.array([])
 
 for alpha in alphas:
@@ -216,6 +215,9 @@ for alpha in alphas:
 	bys_RMS2 = np.append(bys_RMS2, calculateRMS(test_t, bys_y2))
 	bys_RMS3 = np.append(bys_RMS3, calculateRMS(test_t, bys_y3))
 
+for x in range(len(alphas)):
+	print alphas[x], "=", bys_RMS3[x]
+
 plt.plot(alphas, bys_RMS1, ".r-", label="Bayes D=2")
 plt.plot(alphas, bys_RMS2, ".b-", label="Bayes D=1")
 plt.plot(alphas, bys_RMS3, ".g-", label="Bayes D=5")
@@ -225,5 +227,3 @@ plt.ylabel("Bayesian Root Mean Square")
 plt.legend(loc="best")
 
 plt.show()
-
-""" Weighted sum-of-squares """
