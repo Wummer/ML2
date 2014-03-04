@@ -133,97 +133,96 @@ def computeBayesianMeanAndCovariance(X, t, alpha):
 
  	return mean, covariance  
 
-""" MAIN """
-train = load_files("sunspotsTrainStatML.dt")
-test = load_files("sunspotsTestStatML.dt")
 
-subsets = [[2,3],[4],[0,1,2,3,4]]
+def run():
+	""" MAIN """
+	train = load_files("sunspotsTrainStatML.dt")
+	test = load_files("sunspotsTestStatML.dt")
 
-#get subset of observation variables
-x1 = getSubset(train, subsets[0])
-x2 = getSubset(train, subsets[1])
-x3 = getSubset(train, subsets[2])
+	subsets = [[2,3],[4],[0,1,2,3,4]]
 
-test_x1 = getSubset(test, subsets[0])
-test_x2 = getSubset(test, subsets[1])
-test_x3 = getSubset(test, subsets[2])
+	#get subset of observation variables
+	x1 = getSubset(train, subsets[0])
+	x2 = getSubset(train, subsets[1])
+	x3 = getSubset(train, subsets[2])
 
-#get vector of all target variables
-t = getSubset(train, [5])
-test_t = getSubset(test, [5])
+	test_x1 = getSubset(test, subsets[0])
+	test_x2 = getSubset(test, subsets[1])
+	test_x3 = getSubset(test, subsets[2])
 
-#build design matrix
-phi1 = createDesignMatrix(x1)
-phi2 = createDesignMatrix(x2)
-phi3 = createDesignMatrix(x3)
+	#get vector of all target variables
+	t = getSubset(train, [5])
+	test_t = getSubset(test, [5])
 
-#get weight vectors
-w1 = findML(phi1, t)
-w2 = findML(phi2, t)
-w3 = findML(phi3, t)
+	#build design matrix
+	phi1 = createDesignMatrix(x1)
+	phi2 = createDesignMatrix(x2)
+	phi3 = createDesignMatrix(x3)
 
-#get predicted target classes on test
-y1 = predict(w1, test_x1)
-y2 = predict(w2, test_x2)
-y3 = predict(w3, test_x3)
+	#get weight vectors
+	w1 = findML(phi1, t)
+	w2 = findML(phi2, t)
+	w3 = findML(phi3, t)
 
-#plot x & t for variable selection 2
-plt.plot(t, x2, "ro", label="x vs training label")
-plt.plot(test_t, test_x2, "bo", label="x vs actual test label")
-plt.plot(y2[0], test_x2[0], y2[:-1], test_x2[:-1], "k-")
-plt.plot(y2, test_x2, "go", label="x vs predicted test label")
-plt.ylabel("x = sunspots in year s-16")
-plt.xlabel("t = sunspots in year s")
-plt.legend(loc="best")
-plt.show()
+	#get predicted target classes on test
+	y1 = predict(w1, test_x1)
+	y2 = predict(w2, test_x2)
+	y3 = predict(w3, test_x3)
 
-#calculate Root Mean Square (RMS) for each variable selection
-RMS1 = calculateRMS(test_t, y1)
-RMS2 = calculateRMS(test_t, y2)
-RMS3 = calculateRMS(test_t, y3)
-#Print out the results
-print "RMS with D=%d = %f"%(len(subsets[0]), RMS1)
-print "RMS with D=%d = %f"%(len(subsets[1]), RMS2)
-print "RMS with D=%d = %f"%(len(subsets[2]), RMS3)
-
-years = np.arange(96) + 1916 #all the years from 1916-2011 are in the test dataset
-plt.plot(years, test_t, "xg-", label="Actual")
-plt.plot(years, y1, "xr-", label="D=2")
-plt.plot(years, y2, "xb-", label="D=1")
-plt.plot(years, y3, "xy-", label="D=5")
-plt.xlabel("years")
-plt.ylabel("sunspots")
-plt.legend(loc="best")
-plt.show()
-
-""" Bayesian LR - MAIN """
-alphas = np.arange(0, 1600, 5)
-bys_RMS1, bys_RMS2, bys_RMS3 = np.array([]), np.array([]), np.array([])
-
-for alpha in alphas:
-	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x1, t, alpha)
-	bys_y1 = predict(bysMean, test_x1)
-
-	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x2, t, alpha)
-	bys_y2 = predict(bysMean, test_x2)
-
-	bysMean, bysCovariance = computeBayesianMeanAndCovariance(x3, t, alpha)
-	bys_y3 = predict(bysMean, test_x3)
+	#plot x & t for variable selection 2
+	plt.plot(t, x2, "ro", label="x vs training label")
+	plt.plot(test_t, test_x2, "bo", label="x vs actual test label")
+	plt.plot(y2[0], test_x2[0], y2[:-1], test_x2[:-1], "k-")
+	plt.plot(y2, test_x2, "go", label="x vs predicted test label")
+	plt.ylabel("x = sunspots in year s-16")
+	plt.xlabel("t = sunspots in year s")
+	plt.legend(loc="best")
+	plt.show()
 
 	#calculate Root Mean Square (RMS) for each variable selection
-	bys_RMS1 = np.append(bys_RMS1, calculateRMS(test_t, bys_y1))
-	bys_RMS2 = np.append(bys_RMS2, calculateRMS(test_t, bys_y2))
-	bys_RMS3 = np.append(bys_RMS3, calculateRMS(test_t, bys_y3))
+	RMS1 = calculateRMS(test_t, y1)
+	RMS2 = calculateRMS(test_t, y2)
+	RMS3 = calculateRMS(test_t, y3)
+	#Print out the results
+	print "RMS with D=%d = %f"%(len(subsets[0]), RMS1)
+	print "RMS with D=%d = %f"%(len(subsets[1]), RMS2)
+	print "RMS with D=%d = %f"%(len(subsets[2]), RMS3)
 
-for x in range(len(alphas)):
-	print alphas[x], "=", bys_RMS3[x]
+	years = np.arange(96) + 1916 #all the years from 1916-2011 are in the test dataset
+	plt.plot(years, test_t, "xg-", label="Actual")
+	plt.plot(years, y1, "xr-", label="D=2")
+	plt.plot(years, y2, "xb-", label="D=1")
+	plt.plot(years, y3, "xy-", label="D=5")
+	plt.xlabel("years")
+	plt.ylabel("sunspots")
+	plt.legend(loc="best")
+	plt.show()
 
-plt.plot(alphas, bys_RMS1, ".r-", label="Bayes D=2")
-plt.plot(alphas, bys_RMS2, ".b-", label="Bayes D=1")
-plt.plot(alphas, bys_RMS3, ".g-", label="Bayes D=5")
-plt.plot(alphas, [RMS3] * len(bys_RMS3), ".y-", label="ML D=5")
-plt.xlabel("alphas")
-plt.ylabel("Bayesian Root Mean Square")
-plt.legend(loc="best")
+	""" Bayesian LR - MAIN """
+	alphas = np.arange(0, 160, 5)
+	bys_RMS1, bys_RMS2, bys_RMS3 = np.array([]), np.array([]), np.array([])
 
-plt.show()
+	for alpha in alphas:
+		bysMean, bysCovariance = computeBayesianMeanAndCovariance(x1, t, alpha)
+		bys_y1 = predict(bysMean, test_x1)
+
+		bysMean, bysCovariance = computeBayesianMeanAndCovariance(x2, t, alpha)
+		bys_y2 = predict(bysMean, test_x2)
+
+		bysMean, bysCovariance = computeBayesianMeanAndCovariance(x3, t, alpha)
+		bys_y3 = predict(bysMean, test_x3)
+
+		#calculate Root Mean Square (RMS) for each variable selection
+		bys_RMS1 = np.append(bys_RMS1, calculateRMS(test_t, bys_y1))
+		bys_RMS2 = np.append(bys_RMS2, calculateRMS(test_t, bys_y2))
+		bys_RMS3 = np.append(bys_RMS3, calculateRMS(test_t, bys_y3))
+
+	plt.plot(alphas, bys_RMS1, ".r-", label="Bayes D=2")
+	plt.plot(alphas, bys_RMS2, ".b-", label="Bayes D=1")
+	plt.plot(alphas, bys_RMS3, ".g-", label="Bayes D=5")
+	plt.plot(alphas, [RMS3] * len(bys_RMS3), ".y-", label="ML D=5")
+	plt.xlabel("alphas")
+	plt.ylabel("Bayesian Root Mean Square")
+	plt.legend(loc="best")
+
+	plt.show()

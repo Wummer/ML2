@@ -1,20 +1,20 @@
 from __future__ import division
 import numpy
 from matplotlib import pylab as plt
+import Maria_LDA
 import sunspots
 
 """
 Part 1
-"""
-train = open('IrisTrain2014.dt', 'r')
-test = open('IrisTest2014.dt', 'r')
+""" 
+#Maria_LDA
+#Called when importing the file
 
-#Calling read and split
-train_set = LDA.read_data(train)
-test_set = LDA.read_data(test)
-
+print "*" * 45
 
 """
 Part 2
 """
+#calls file sunspots.py
+#outputs 3 plots and RMS for ML
 sunspots.run()
