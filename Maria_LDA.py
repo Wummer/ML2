@@ -1,9 +1,7 @@
 from __future__ import division
 import numpy as np
-import pylab as plt
 import math
 import operator
-from sklearn.lda import LDA
 
 train = open('IrisTrain2014.dt', 'r')
 test = open('IrisTest2014.dt', 'r')
@@ -239,7 +237,7 @@ trainset = read_data(train)
 testset = read_data(test)
 
 print "*" * 45
-print "Our own"
+print "LDA"
 print "*" * 45
 
 #For non-standardized
